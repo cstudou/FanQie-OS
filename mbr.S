@@ -6,6 +6,7 @@
 ; 变址寄存器 SI, DI
 
 ; -------------------------
+%include "boot.inc"
 section MBR vstart=0x7c00
     mov ax, cs  ; BIOS 是通过 jmp 0：0x7c00 跳转到 MBR 的
     mov ds, ax
@@ -44,60 +45,85 @@ section MBR vstart=0x7c00
     mov bh, 0
     int 0x10
 
-;   功能号：13H,显示字符串
-;       AH＝13H
-;       BH＝页码
-;       BL＝属性(若AL=00H或01H)
-;       CX＝显示字符串长度
-;       (DH、DL)＝坐标(行、列)
-;   ES:BP＝显示字符串的地址 AL＝ 显示输出方式
-;   0—字符串中只含显示字符，其显示属性在BL中。显示后，光标位置不变
-;   1—字符串中只含显示字符，其显示属性在BL中。显示后，光标位置改变
-;   2—字符串中含显示字符和显示属性。显示后，光标位置不变
-;   3—字符串中含显示字符和显示属性。显示后，光标位置改变
+    ;   功能号：13H,显示字符串
+    ;       AH＝13H
+    ;       BH＝页码
+    ;       BL＝属性(若AL=00H或01H)
+    ;       CX＝显示字符串长度
+    ;       (DH、DL)＝坐标(行、列)
+    ;   ES:BP＝显示字符串的地址 AL＝ 显示输出方式
+    ;   0—字符串中只含显示字符，其显示属性在BL中。显示后，光标位置不变
+    ;   1—字符串中只含显示字符，其显示属性在BL中。显示后，光标位置改变
+    ;   2—字符串中含显示字符和显示属性。显示后，光标位置不变
+    ;   3—字符串中含显示字符和显示属性。显示后，光标位置改变
 
-    ;mov ax, string
-    ;mov bp, ax  ; es刚开始就被初始化为cs（段基址）
-    ;mov ax, 0x1301
-    ;mov bx, 0x2 ; bl 中是字符属性,属性黑底绿字(bl = 02h) 
-    ;mov cx, 6
-    ;mov dx, 0
-    ;int 0x10
+
+    ; 读取硬盘n个扇区
+    mov eax, LOADER_STARTS_SECTOR    ; 起始扇区
+    mov bx, LOADER_BASE_ADDR         ; 写入的地址
+    mov cx, 1                        ; 待写入的扇区数
     
-    mov byte [gs:0x00], 'F'
-    mov byte [gs:0x01], 0x24
+    call read_disk
+    jmp LOADER_BASE_ADDR
 
-    mov byte [gs:0x02], 'a'
-    mov byte [gs:0x03], 0x24
+read_disk:
+    mov esi, eax                    ; 复制eax
+    mov di, cx                      
+    ; 1.设置要读区的扇区数
+    mov dx, 0x1f2                   ; 0x1f2端口指定读取或写入的扇区数
+    mov al, cl
+    out dx, al                      ; 读取的扇区数
+    mov eax, esi
 
-    mov byte [gs:0x04], 'n'
-    mov byte [gs:0x05], 0x24
-
-    mov byte [gs:0x06], 'Q'
-    mov byte [gs:0x07], 0x24
-
-    mov byte [gs:0x08], 'i'
-    mov byte [gs:0x09], 0x24
-
-    mov byte [gs:0x0A], 'e'
-    mov byte [gs:0x0B], 0x24
-
-
-    ; 功能02H
-        ; 功能描述：用文本坐标下设置光标位置
-        ;入口参数：AH＝02H
-        ;BH＝显示页码
-        ;DH＝行(Y坐标)
-        ;DL＝列(X坐标)
-    mov ax, 0x200
-    mov bx, 0
-    mov dx, 0x6
-    int 0x10
-
+    ; 2.存储LBA24地址
+    mov dx, 0x1f3
+    out dx, al
     
-    jmp $
-    ;string db "1 MBR"
+    mov cl, 8
+    shr eax, cl                     ; 逻辑右移
+    mov dx, 0x1f4
+    out dx, al
+
+    shr eax, cl
+    mov dx, 0x1f5
+    out dx, al
+
+    shr eax, cl
+    and al, 0x0f                    ; LBA24最后四位
+    or al, 0xe0                    ; 设置7-4位为1110，表示lba模式
+    mov dx, 0x1f6
+    out dx, al
+
+    ; 3.向0xf17端口写入读命令0x20
+    mov dx, 0x1f7
+    mov al, 0x20
+    out dx, al
+
+; 4.检测硬盘状态
+.not_ready:
+    nop                             ; 空指令
+    in al, dx                       ; 读端口
+    and al, 0x88                    ; 第 4 位为 1 表示硬盘控制器已准备好数据传输
+                                    ; 第 7 位为 1 表示硬盘忙
+    cmp al, 0x08
+    jnz .not_ready                  ; 0标志（ZF）没有被置位
+
+    ; 5.从0x1f0读取数据
+    mov ax, di                      ; 读一个扇区
+    mov dx, 256                     ; 每次读入一个字（2字节）
+    mul dx                          ; dx * ax = (低16位存在ax，高16位存dx)
+    mov cx, ax
+    mov dx, 0x1f0
+.to_read:
+    in ax, dx
+    mov [bx], ax
+    add bx, 2
+    loop .to_read                   ; 循环次数由计数寄存器cx控制
+    ret
+
+
     times 510-($-$$) db 0  ; 剩余地址置0
     db 0x55, 0xaa
 
+    
 
