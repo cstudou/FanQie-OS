@@ -29,6 +29,11 @@ section loader vstart=LOADER_BASE_ADDR
     mov dx, 0x6
     int 0x10
     
+    ; 打开A20
+    in al, 0x92
+    or al, 00000010B
+    out 0x92, al
+
     jmp $
     times 512-($-$$) db 0  ; 剩余地址置0
     
