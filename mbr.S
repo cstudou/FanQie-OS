@@ -61,7 +61,7 @@ section MBR vstart=0x7c00
     ; 读取硬盘n个扇区
     mov eax, LOADER_STARTS_SECTOR    ; 起始扇区
     mov bx, LOADER_BASE_ADDR         ; 写入的地址
-    mov cx, 1                        ; 待写入的扇区数
+    mov cx, 4                        ; 待写入的扇区数
     
     call read_disk
     jmp LOADER_BASE_ADDR
