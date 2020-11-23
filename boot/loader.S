@@ -116,12 +116,20 @@ loader_start:
     ; 加载GDT
     lgdt [gdt_ptr]
 
+
     ; 进入保护模式
     mov eax, cr0
     or eax, 0x00000001
     mov cr0, eax
 
     jmp dword SELECTOR_CODE:p_mode_start
+    jmp dword SELECTOR_CODE:enter_kernel
+
+[bits 32]
+enter_kernel:
+    call kernel_init
+    mov esp 0xc009f000
+    jmp KERNEL_ENTRY_POINT
 
 
 
@@ -181,26 +189,129 @@ p_mode_start:
     mov ax, SELECTOR_VIDEO
     mov gs, ax
 
+    mov eax, KERNEL_START_SECTION
+    mov ebx, KERNEL_BIN_ADDR
+    mov ecx, 200                              ; 读200个扇区
+    call read_disk_32
     ; 创建页目录及页表并初始化页内存位图
-   call setup_page
-   sgdt [gdt_ptr]	      
+    call setup_page
+    sgdt [gdt_ptr]	      
 
-   mov ebx, [gdt_ptr + 2]                     ; gdt_ptr的高4位是GDT地址
-   or dword [ebx + 0x18 + 4], 0xc0000000      ; 视频段是第3个段描述符,每个描述符是8字节,故0x18，高4字节的最高位是段基址的31~24位
+    mov ebx, [gdt_ptr + 2]                     ; gdt_ptr的高4位是GDT地址
+    or dword [ebx + 0x18 + 4], 0xc0000000      ; 视频段是第3个段描述符,每个描述符是8字节,故0x18，高4字节的最高位是段基址的31~24位
 
-   add dword [gdt_ptr + 2], 0xc0000000        ; 将gdt的基址加上0xc0000000使其成为内核所在的高地址
+    add dword [gdt_ptr + 2], 0xc0000000        ; 将gdt的基址加上0xc0000000使其成为内核所在的高地址
 
-   add esp, 0xc0000000      
+    add esp, 0xc0000000      
 
-   ; 把页目录地址赋给cr3
-   mov eax, PG_DIR_POS
-   mov cr3, eax
+    ; 把页目录地址赋给cr3
+    mov eax, PG_DIR_POS
+    mov cr3, eax
 
-   ; 打开cr0的pg位(第31位)
-   ; 第0位是保护模式的开关
-   mov eax, cr0
-   or eax, 0x80000000
-   mov cr0, eax
+    ; 打开cr0的pg位(第31位)
+    ; 第0位是保护模式的开关
+    mov eax, cr0
+    or eax, 0x80000000
+    mov cr0, eax
 
-   lgdt [gdt_ptr]            
-   jmp $
+    lgdt [gdt_ptr]       
+    jmp $
+
+
+[bits 32]
+kernel_init:
+    xor eax, eax
+    xor ebx, ebx
+    xor ecx, ecx
+    xor edx, edx
+    mov dx, [KERNEL_BIN_ADDR + 42]      ; +42处为程序头表条目大小
+    mov ebx, [KERNEL_BIN_ADDR + 28]     ; +28处为程序头表在文件中的偏移
+    add ebx, KERNEL_BIN_ADDR
+    mov cx, [KERNEL_BIN_ADDR + 44]      ; +44处为ELF文件有多少个段
+.each_segment:
+    cmp bytes [ebx], PT_NULL
+    je .PT_NULL
+    push dword [ebx + 16]               ; 该段大小
+    mov eax, [ebx + 4]                  ; 本段在文件内的起始偏移字节
+    add eax, KERNEL_BIN_ADDR            ; 物理地址
+
+    push eax                            ; 源地址
+    push dword [ebx + 8]                ; 目的地址
+    call mem_cpy
+    add esp, 12
+.PT_NULL:
+    add ebx, edx                        ; 跨国该段
+    loop .each_segment
+    ret
+
+[bits 32]
+mem_cpy:
+    cld                             ; 方向标志位 DF 置为 0,esi edi自动+1
+    push ebp
+    mov ebp, esp
+    push ecx
+
+    mov edi, [ebp + 8]
+    mov esi, [ebp + 12]
+    mov ecx, [ebp + 16]
+    rep movsb                       ; 按ecx重复
+    pop ecx
+    pop ebp
+    ret
+
+
+[bits 32]
+read_disk_32:
+    mov esi, eax                    ; 复制eax
+    mov di, cx                      
+    ; 1.设置要读区的扇区数
+    mov dx, 0x1f2                   ; 0x1f2端口指定读取或写入的扇区数
+    mov al, cl
+    out dx, al                      ; 读取的扇区数写到0x1f2端口
+    mov eax, esi
+
+    ; 2.存储LBA24地址 LBALOW - LBAMID - LBAHIGH
+    mov dx, 0x1f3
+    out dx, al
+    
+    mov cl, 8
+    shr eax, cl                     ; 逻辑右移
+    mov dx, 0x1f4
+    out dx, al
+
+    shr eax, cl
+    mov dx, 0x1f5
+    out dx, al
+
+    shr eax, cl
+    and al, 0x0f                    ; LBA24最后四位
+    or al, 0xe0                    ; 设置7-4位为1110，表示lba模式
+    mov dx, 0x1f6
+    out dx, al
+
+    ; 3.向0xf17端口写入读命令0x20，写0x30，磁盘识别0xEC
+    mov dx, 0x1f7
+    mov al, 0x20
+    out dx, al
+
+; 4.检测硬盘状态
+.not_ready:
+    nop                             ; 空指令
+    in al, dx                       ; 读端口
+    and al, 0x88                    ; 第 4 位为 1 表示硬盘控制器已准备好数据传输
+                                    ; 第 7 位为 1 表示硬盘忙
+    cmp al, 0x08
+    jnz .not_ready                  ; 0标志（ZF）没有被置位
+
+    ; 5.从0x1f0读取数据
+    mov ax, di                      ; 读一个扇区
+    mov dx, 256                     ; 每次读入一个字（2字节）
+    mul dx                          ; dx * ax = (低16位存在ax，高16位存dx)
+    mov cx, ax
+    mov dx, 0x1f0
+.to_read:
+    in ax, dx
+    mov [ebx], ax
+    add ebx, 2
+    loop .to_read                   ; 循环次数由计数寄存器cx控制
+    ret
