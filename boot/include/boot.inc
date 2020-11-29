@@ -53,3 +53,6 @@ PG_US_U equ 100b
 ; ----内核加载地址-------
 KERNEL_START_SECTOR equ 0x9
 KERNEL_BIN_ADDR equ 0x70000
+KERNEL_ENTRY_POINT equ 0xc0001000   ; loader起始地址为0x500，留2000字节--》0xcd0--》取个整数
+
+PT_NULL equ 0

@@ -122,13 +122,14 @@ loader_start:
     or eax, 0x00000001
     mov cr0, eax
 
-    jmp dword SELECTOR_CODE:p_mode_start
-    jmp dword SELECTOR_CODE:enter_kernel
+    jmp dword SELECTOR_CODE:page_mode_start
+    
 
 [bits 32]
 enter_kernel:
     call kernel_init
-    mov esp 0xc009f000
+    mov esp, 0xc009f000          ; 映射为0x9f000
+    
     jmp KERNEL_ENTRY_POINT
 
 
@@ -180,7 +181,7 @@ setup_page:
 
 
 [bits 32]
-p_mode_start:
+page_mode_start:
     mov ax, SELECTOR_DATA
     mov ds, ax
     mov es, ax
@@ -189,9 +190,9 @@ p_mode_start:
     mov ax, SELECTOR_VIDEO
     mov gs, ax
 
-    mov eax, KERNEL_START_SECTION
+    mov eax, KERNEL_START_SECTOR
     mov ebx, KERNEL_BIN_ADDR
-    mov ecx, 200                              ; 读200个扇区
+    mov ecx, 200                              ; 读200个内核扇区
     call read_disk_32
     ; 创建页目录及页表并初始化页内存位图
     call setup_page
@@ -215,7 +216,7 @@ p_mode_start:
     mov cr0, eax
 
     lgdt [gdt_ptr]       
-    jmp $
+    jmp SELECTOR_CODE:enter_kernel
 
 
 [bits 32]
@@ -229,14 +230,14 @@ kernel_init:
     add ebx, KERNEL_BIN_ADDR
     mov cx, [KERNEL_BIN_ADDR + 44]      ; +44处为ELF文件有多少个段
 .each_segment:
-    cmp bytes [ebx], PT_NULL
+    cmp byte [ebx], PT_NULL             ; 遍历程序头
     je .PT_NULL
-    push dword [ebx + 16]               ; 该段大小
+    push dword [ebx + 16]               ; 本段在文件中的大小
     mov eax, [ebx + 4]                  ; 本段在文件内的起始偏移字节
     add eax, KERNEL_BIN_ADDR            ; 物理地址
 
     push eax                            ; 源地址
-    push dword [ebx + 8]                ; 目的地址
+    push dword [ebx + 8]                ; 目的地址（起始虚拟地址）
     call mem_cpy
     add esp, 12
 .PT_NULL:

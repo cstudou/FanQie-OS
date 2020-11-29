@@ -1,0 +1,58 @@
+LOADER_BASE_ADDR equ 0x500  ;loader的加载地址，0x500-0x7BFF或者0x7E00-0x9FBFF
+LOADER_STARTS_SECTOR equ 0x2 ;loader放在第二个扇区
+
+
+; GDT描述符属性
+DESC_G_4K   equ     1_00000000000000000000000b ; 段界限的单位大小。1字节或者4kb
+DESC_D_32   equ     1_0000000000000000000000b ; 用来指示有效地址（段内偏移地址）及操作数的大小,32/16位
+DESC_L      equ     0_000000000000000000000b ; 是否是64位代码段
+DESC_AVL    equ     0_00000000000000000000b ; 没有实际意义
+
+DESC_LIMIT_CODE2    equ     1111_0000000000000000b ; 访问4G地址，段界限粒度为4K，段界限的第一部分在低4字节中，跟这里凑成FFFFF
+DESC_LIMIT_DATA2    equ     1111_0000000000000000b
+DESC_LIMIT_VIDEO2   equ     0000_0000000000000000b
+
+DESC_P      equ     1_000000000000000b      ;段是否在内存
+DESC_DPL_0  equ     00_0000000000000b       
+DESC_DPL_1  equ     01_0000000000000b
+DESC_DPL_2  equ     10_0000000000000b
+DESC_DPL_3  equ     11_0000000000000b
+DESC_S_CODE equ     1_000000000000b
+DESC_S_DATA equ     1_000000000000b
+DESC_S_sys  equ     0_000000000000b
+
+; x,c,r,a
+DESC_TYPE_CODE  equ     1000_00000000b  ; 代码段为可执行，非一致性，不可读，已访问位清0
+; x,e,w,a
+DESC_TYPE_DATA  equ     0010_00000000b  ; 数据段不可执行，向上扩展，可写，已访问位清0
+
+
+DESC_CODE_HIGH4 equ (0x00 << 24) + DESC_G_4K + DESC_D_32 + DESC_L + DESC_AVL + DESC_LIMIT_CODE2 + DESC_P + DESC_DPL_0 + DESC_S_CODE + DESC_TYPE_CODE + 0x00
+
+DESC_DATA_HIGH4 equ (0x00 << 24) + DESC_G_4K + DESC_D_32 + DESC_L + DESC_AVL + DESC_LIMIT_DATA2 + DESC_P + DESC_DPL_0 + DESC_S_DATA + DESC_TYPE_DATA + 0x00
+
+DESC_VIDEO_HIGH4 equ (0x00 << 24) + DESC_G_4K + DESC_D_32 + DESC_L + DESC_AVL + DESC_LIMIT_VIDEO2 + DESC_P + DESC_DPL_0 + DESC_S_DATA + DESC_TYPE_DATA + 0x0b
+
+;-------------- 选择子属性 --------------- 
+RPL0 equ 00b
+RPL1 equ 01b
+RPL2 equ 10b
+RPL3 equ 11b
+TI_GDT equ 000b 
+TI_LDT equ 100b
+
+; --------页目录--------
+PG_DIR_POS equ 0x100000
+PG_P equ 1b
+PG_RW_R equ 00b
+PG_RW_W equ 10b
+PG_US_S equ 000b
+PG_US_U equ 100b
+
+
+; ----内核加载地址-------
+KERNEL_START_SECTOR equ 0x9
+KERNEL_BIN_ADDR equ 0x70000
+KERNEL_ENTRY_POINT equ 0xc0001000   ; loader起始地址为0x500，留2000字节--》0xcd0--》取个整数
+
+PT_NULL equ 0
