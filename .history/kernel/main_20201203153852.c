@@ -30,13 +30,10 @@ int main()
     Puts("kernel start\n");
     init_all();
     void *p = get_kernel_page(3);
-    Puts("\n get_kernel_page start vaddr is "); 
-    Putint((uint32_t)p);
-    Puts("\n");
+    
     //Puts("next\n");
     //asm volatile("sti");	     // sti表示允许中断发生
     //ASSERT(1==2);
-    Putint(*(uint32_t*)(0xc009a000));
     while(1);
     return 0;
 }

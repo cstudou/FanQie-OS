@@ -36,7 +36,6 @@ int main()
     //Puts("next\n");
     //asm volatile("sti");	     // sti表示允许中断发生
     //ASSERT(1==2);
-    Putint(*(uint32_t*)(0xc009a000));
     while(1);
     return 0;
 }

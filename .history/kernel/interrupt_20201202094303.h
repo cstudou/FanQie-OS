@@ -6,12 +6,11 @@
 #include "global.h"
 #include "../lib/kernel/print.h"
 
-enum InterruptStatus
+enum intertupt_status
 {
     InterruptOff,
     InterruptOn
 };
-enum InterruptStatus Off_interrupt();
-enum InterruptStatus On_interrupt();
+
 void idt_init();
 #endif

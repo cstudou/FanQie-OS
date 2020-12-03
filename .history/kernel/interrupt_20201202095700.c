@@ -4,7 +4,7 @@
 #define PIC_S_CTRL 0xa0         //从片控制端口
 #define PIC_S_DATA 0xa1         //从片数据端口
 #define IDT_COUNT 33
-#define EFLAGS_IF 0x00000200    //eflags if位为1, IF 位于 eflags 中的第 9 位，
+#define EFLAGS_IF 0x00000200    //eflags if位为1
 
 //中断门描述符
 struct InterruptGate
@@ -112,7 +112,7 @@ void idt_init()
     //Puts("hello world\n");
 }
 
-enum InterruptStatus interrupt_get_status()
+enum intertupt_status interrupt_get_status()
 {
     uint32_t eflags = 0;
     //pushfl保存eflags
@@ -120,9 +120,9 @@ enum InterruptStatus interrupt_get_status()
     return (eflags & EFLAGS_IF) ? InterruptOn : InterruptOff;
 }
 //开中断，返回之前的状态
-enum InterruptStatus On_interrupt()
+enum interrupt_status On_interrupt()
 {
-    enum InterruptStatus status;
+    enum intertupt_status status;
     if(interrupt_get_status() == InterruptOn)
     {
         status = InterruptOn;
@@ -133,9 +133,9 @@ enum InterruptStatus On_interrupt()
     return status;
 }
 
-enum InterruptStatus Off_interrupt()
+enum interrupt_status Off_interrupt()
 {
-    enum InterruptStatus status;
+    enum interrupt_status status;
     if(interrupt_get_status() == InterruptOff)
     {
         status = InterruptOff;
@@ -144,14 +144,4 @@ enum InterruptStatus Off_interrupt()
     status = InterruptOn;
     asm volatile("cli":::"memory");
     return status;
-}
-
-//设置中断状态
-enum InterruptStatus set_InterruptStatus(enum InterruptStatus status)
-{
-    if(status & InterruptOn)
-    {
-        return On_interrupt();
-    }
-    return Off_interrupt();
 }

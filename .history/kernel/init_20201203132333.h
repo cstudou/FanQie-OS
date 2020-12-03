@@ -3,7 +3,7 @@
 
 #include "interrupt.h"
 #include "../device/timer.h"
-#include "../lib/kernel/memory.h"
+#include "memory.h"
 void init_all();
 
 #endif
