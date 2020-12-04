@@ -104,6 +104,7 @@ static void* get_virtual_addr(enum MemoryPoolFlag flag, uint32_t size)
     return (void *)virtual_start;
 }
 
+
 //找页表项指针
 uint32_t *pte_ptr(uint32_t vaddr)
 {
@@ -111,13 +112,14 @@ uint32_t *pte_ptr(uint32_t vaddr)
     //构造新的虚拟地址
     uint32_t *pte = (uint32_t*)(0xffc00000 + ((vaddr & 0xffc00000) >> 10) + \
              ((vaddr & 0x003ff000) >> 12) * 4);
+    
     return pte;
 }
 
 //找页目录项指针
 uint32_t *pde_ptr(uint32_t vaddr)
 {
-    uint32_t *pde = (uint32_t *)(0xfffff000 + ((vaddr & 0xffc00000) >> 22));
+    uint32_t *pde = (uint32_t *)(0xfffff000 + ((vaddr & 0xffc00000) >> 22) * 4); //一定要乘以4！！！！！
     return pde;
 }
 
@@ -129,8 +131,6 @@ static void *palloc(struct Pool *physical_pool)
     {
         return NULL;
     }
-
-    Putint(bit_index);
     bitmap_set_musk(&physical_pool->memory_pool_bitmap, bit_index, 1);
     uint32_t page = (physical_pool->physical_addr_start + bit_index * PAGE_SIZE);
     return (void *)page;
@@ -143,10 +143,12 @@ static void page_table_add(void *vaddr_, void *paddr_)
     uint32_t paddr = (uint32_t)paddr_;
     uint32_t *pde = pde_ptr(vaddr);
     uint32_t *pte = pte_ptr(vaddr);
-
+        Putint(*pde);
+    Puts("\n");
     //目录项存在
     if(*pde & 0x1)
     {
+
         ASSERT(!(*pte & 0x1));
         if(!(*pte & 0x1))
         {
@@ -211,3 +213,5 @@ void *get_kernel_page(uint32_t size)
     }
     return vaddr;
 }
+
+
