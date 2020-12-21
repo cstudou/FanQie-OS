@@ -20,7 +20,7 @@ static struct GdtDesc make_gdt_desc(uint32_t *desc_addr, uint32_t limit, uint8_t
     desc.attr_low = attr_low;
     desc.base_low = base & 0x0000ffff;
     desc.base_mid = (base & 0x00ff0000) >> 16;
-    desc.base_high = (base & 0xff000000) >> 24;
+    desc.base_high = base >> 24;
     return desc;
 }
 

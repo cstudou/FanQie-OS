@@ -35,7 +35,7 @@
 #define DESC_L          0       //是否是64位代码段
 #define DESC_AVL        0       //cpu不用此位
 #define DESC_P          1       //是否存在于内存
-#define DESC_DPL_0      1       //特权级
+#define DESC_DPL_0      0       //特权级
 #define DESC_DPL_1      1
 #define DESC_DPL_2      2
 #define DESC_DPL_3      3
@@ -60,7 +60,7 @@
 
 // TSS
 #define TSS_DESC_D          0
-#define TSS_ATTR_HIGH       ((DESC_G_4K << 7) + (DESC_D_32 << 6) + (DESC_L << 5) + (DESC_AVL << 4))
+#define TSS_ATTR_HIGH       ((DESC_G_4K << 7) + (TSS_DESC_D << 6) + (DESC_L << 5) + (DESC_AVL << 4))
 #define TSS_ATTR_LOW        ((DESC_P << 7) + (DESC_DPL_0 << 5) + (DESC_S_SYS << 4) + DESC_TYPE_TSS)
 #define SELECTOR_TSS        ((4 << 3) + (TI_GDT << 2) + RPL0)
 
