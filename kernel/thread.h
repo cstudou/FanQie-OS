@@ -82,7 +82,7 @@ struct TaskStruct* running_thread();
 void schedule();
 void thread_init();
 void thread_create(struct TaskStruct *pthread, void (*function)(void *), void *arg);
-
+void init_thread(struct TaskStruct* pthread, char *name, int priority);
 void thread_block(enum ThreadStatus status);
 void thread_unblock(struct TaskStruct *thread);
 #endif

@@ -102,13 +102,13 @@ void create_user_process(void *filename, char *name)
 {
     //内核维护进程信息
     struct TaskStruct *thread = get_kernel_page(1);
-    thread_init(thread, filename, DEFAULT_PROCESS_PRIORITY);
+    init_thread(thread, name, DEFAULT_PROCESS_PRIORITY);
     create_process_bitmap(thread);              //创建进程位图
 
     thread_create(thread, start_process, filename);
     thread->page_addr = create_process_page_dir();
     enum InterruptStatus status = Off_interrupt();
     list_push_back(&thread_ready_list, &thread->thread_tag);
-    list_push_back(&thread_all_list, &thread->thread_tag);
+    list_push_back(&thread_all_list, &thread->all_thread_tag);
     set_InterruptStatus(status);
 }

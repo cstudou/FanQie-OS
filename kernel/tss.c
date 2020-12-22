@@ -42,7 +42,7 @@ void tss_init()
     // 重新加载gdt
     // |32位基址|16位界限|
     // 一共7个描述符
-    uint64_t new_gdt = (uint64_t)(((uint32_t)0xc0000500 << 16) + (uint16_t)(7 * 8 - 1));
+    uint64_t new_gdt = (uint64_t)(((uint64_t)0xc0000500 << 16) + (uint16_t)(7 * 8 - 1));
 
     asm volatile("lgdt %0" ::"m"(new_gdt));
     asm volatile("ltr %w0"::"r"(SELECTOR_TSS));

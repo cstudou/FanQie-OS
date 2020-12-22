@@ -128,7 +128,7 @@ void idt_init()
     idt_desc_init();
     pic_init();                     //初始化可编程中断控制器
     exception_intr_init();          //异常名初始化并注册通常的中断处理函数                                          
-    uint64_t idt_data =  (sizeof(idt) - 1) | (uint64_t)((uint32_t)idt << 16);  //32位表基址，16位表界限
+    uint64_t idt_data =  (sizeof(idt) - 1) | ((uint64_t)(uint32_t)idt << 16);  //32位表基址，16位表界限
     asm volatile("lidt %0"::"m"(idt_data));  //%0 其实是 idt_data 的地址&idt_data,AT&T把内存寻址放在最高级，任何数字都被看成是内存地址
     Puts("idt init done!\n");
     //Puts("hello world\n");
