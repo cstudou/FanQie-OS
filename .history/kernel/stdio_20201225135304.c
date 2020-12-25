@@ -1,6 +1,7 @@
 #include "stdio.h"
 #define va_arg(ap, t) *((t*)(ap += 4))	  // ap指向下一个参数并返回其值
 
+
 //整形转字符串
 //只传一维指针的话替换完字符串后指针实际上不会变
 static void itoa(uint32_t value, char **buf, int base)
