@@ -12,10 +12,18 @@ extern void switch_to(struct TaskStruct*, struct TaskStruct *);
 static void kernel_thread(void (*function)(void *), void *arg)
 {
     On_interrupt(); //线程运行是由时钟中断处理函数调用任务调度器完成的，进入中断后处理器会关中断
+    
     function(arg);
 
 }
-
+uint32_t allocate_pid()
+{
+    static uint32_t pid_num = 0;
+    lock_acquire(&pid_lock);
+    pid_num++;
+    lock_release(&pid_lock);
+    return pid_num;
+}
 //创建线程
 //threadstack:ebp,ebx,edi,esi;函数运行地址，返回地址，函数指针，参数
 void thread_create(struct TaskStruct *pthread, void (*function)(void *), void *arg)
@@ -37,6 +45,7 @@ void thread_create(struct TaskStruct *pthread, void (*function)(void *), void *a
 void init_thread(struct TaskStruct* pthread, char *name, int priority)
 {
     memset(pthread, 0, sizeof(struct TaskStruct));
+    pthread->pid = allocate_pid();          //分配pid
     pthread->priority = priority;
     strcpy(pthread->name, name);
     if(pthread == main_thread_pcb)
@@ -141,6 +150,7 @@ void thread_init()
     Puts("thread init start\n");
     list_init(&thread_all_list);
     list_init(&thread_ready_list);
+    lock_init(&pid_lock);
     make_main_thread();             //将当前main函数创建为线程，在pcb上写线程信息
     Puts("thread init done\n");
 }
@@ -157,8 +167,8 @@ void thread_block(enum ThreadStatus status)
     enum InterruptStatus intr_status = Off_interrupt();
 
     struct TaskStruct *thread = running_thread();
-    thread->task_status = status; //为了不让其再被调度，必须将其 status 置为非 TASK_RUNNING
-    schedule();     //被换下cpu，执行另一个线程,因为当再次调用该线程时，pop弹出switch返回地址，schedul结束
+    thread->task_status = status;   //为了不让其再被调度，必须将其 status 置为非 TASK_RUNNING
+    schedule();                     //被换下cpu，执行另一个线程,因为当再次调用该线程时，pop弹出switch返回地址，schedul结束
 
     set_InterruptStatus(intr_status);
 

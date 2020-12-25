@@ -45,6 +45,31 @@ intr_exit:
     add esp, 4                 ; 跳过error_code
     iretd
 
+
+; 0x80 中断
+[bits 32]
+extern syscall_table
+section .text
+global syscall_handler
+syscall_handler:
+    push 0
+    push ds
+    push es
+    push fs
+    push gs
+    pushad                      ; EAX,ECX,EDX,EBX,ESP,EBP,ESI,EDI
+    push 0x80
+
+    push edx
+    push ecx
+    push ebx                    ; 三个参数
+
+    call [syscall_table + eax*4]
+    add esp, 12                 ; 跳过参数
+    mov [esp + 32], eax         ; popad会恢复寄存器上下文，把eax写到popad中的位置
+    jmp intr_exit               ; jmp指令不存返回地址
+
+
 ; 中断向量 0~19 为处理器内部固定的异常类型，20~31 是 Intel 保留的
 VECTOR 0x00,ZERO
 VECTOR 0x01,ZERO

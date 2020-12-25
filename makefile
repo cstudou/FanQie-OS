@@ -14,14 +14,16 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	   $(BUILD_DIR)/string.o $(BUILD_DIR)/bitmap.o $(BUILD_DIR)/thread.o \
 	   $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o $(BUILD_DIR)/switch.o \
 	   $(BUILD_DIR)/console.o $(BUILD_DIR)/lock.o $(BUILD_DIR)/keyboard.o \
-	   $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o $(BUILD_DIR)/process.o
+	   $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o $(BUILD_DIR)/process.o \
+	   $(BUILD_DIR)/syscall.o $(BUILD_DIR)/stdio.o
 
 $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h lib/kernel/stdint.h kernel/init.h \
-				kernel/thread.h kernel/thread.h device/console.h device/ioqueue.h kernel/process.h
+				kernel/thread.h kernel/thread.h device/console.h device/ioqueue.h \
+				kernel/process.h kernel/syscall.h kernel/stdio.h
 	$(CC) $(CFLAGS) $< -o $@
 $(BUILD_DIR)/init.o: kernel/init.c kernel/init.h lib/kernel/print.h kernel/thread.h \
 					lib/kernel/stdint.h kernel/interrupt.h device/timer.h lib/kernel/memory.h \
-					device/keyboard.h kernel/tss.h
+					device/keyboard.h kernel/tss.h kernel/syscall.h
 	$(CC) $(CFLAGS) $< -o $@
 $(BUILD_DIR)/interrupt.o: kernel/interrupt.c kernel/interrupt.h lib/kernel/stdint.h\
 					kernel/global.h lib/kernel/io.h lib/kernel/print.h
@@ -48,6 +50,9 @@ $(BUILD_DIR)/thread.o: kernel/thread.c kernel/thread.h lib/kernel/string.h kerne
 			lib/kernel/stdint.h kernel/interrupt.h lib/kernel/memory.h lib/kernel/list.h
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/syscall.o: kernel/syscall.c kernel/syscall.h kernel/thread.h lib/kernel/stdint.h lib/kernel/print.h device/console.h
+	$(CC) $(CFLAGS) $< -o $@
+
 $(BUILD_DIR)/tss.o: kernel/tss.c kernel/tss.h lib/kernel/stdint.h\
 					kernel/global.h kernel/thread.h
 	$(CC) $(CFLAGS) $< -o $@	
@@ -56,6 +61,9 @@ $(BUILD_DIR)/lock.o: kernel/lock.c kernel/lock.h lib/kernel/stdint.h\
 				kernel/interrupt.h  lib/kernel/list.h kernel/thread.h
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/stdio.o: kernel/stdio.c kernel/stdio.h lib/kernel/print.h\
+				kernel/syscall.h  
+	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/console.o: device/console.c device/console.h kernel/lock.h kernel/thread.h \
 				lib/kernel/stdint.h lib/kernel/print.h

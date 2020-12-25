@@ -9,7 +9,7 @@
 // R/W 属性位值，读/写/执行 // U/S 属性位值，系统级
 // U/S 属性位值，用户级
 
-//#define offset(type, member) ((int)type) 
+struct Lock pid_lock;           //分配pid
 enum ThreadStatus
 {
     RUNNING, READY, BLOCKED, WAITTING, HANGING, DIED    
@@ -61,19 +61,20 @@ struct ThreadStack
 
 struct TaskStruct
 {
-    uint32_t *self_stack;       //进程的内核栈
-    enum ThreadStatus task_status;
-    uint8_t priority;
-    char name[16];
+    uint32_t            *self_stack;        //进程的内核栈
+    uint32_t            pid;
+    enum ThreadStatus   task_status;
+    uint8_t             priority;
+    char                name[16];
 
-    uint8_t clock;              //时间片,优先级越高时间片越长
-    uint32_t total_time;        //运行总时间
-    struct ListPtr thread_tag;  //线程的标签
-    struct ListPtr all_thread_tag;
+    uint8_t             clock;              //时间片,优先级越高时间片越长
+    uint32_t            total_time;         //运行总时间
+    struct ListPtr      thread_tag;         //线程的标签
+    struct ListPtr      all_thread_tag;
 
-    uint32_t *page_addr;            //页目录表虚拟地址
-    struct VirtualAddr user_addr;   //用户进程虚拟地址，虚拟进程池
-    uint32_t stack_margin;          //栈的边界标记，用于检测栈的溢出
+    uint32_t            *page_addr;            //页目录表虚拟地址
+    struct VirtualAddr  user_addr;             //用户进程虚拟地址，虚拟进程池
+    uint32_t            stack_margin;          //栈的边界标记，用于检测栈的溢出
 };
 
 

@@ -3,7 +3,7 @@
 #define PIC_M_DATA 0x21         //主片数据端口
 #define PIC_S_CTRL 0xa0         //从片控制端口
 #define PIC_S_DATA 0xa1         //从片数据端口
-#define IDT_COUNT 34            //0x20是时钟，0x21是键盘
+#define IDT_COUNT 0x81            //0x20是时钟，0x21是键盘，0x80是中断
 #define EFLAGS_IF 0x00000200    //eflags if位为1, IF 位于 eflags 中的第 9 位，
 
 //中断门描述符
@@ -19,7 +19,7 @@ struct InterruptGate
 static struct InterruptGate idt[IDT_COUNT];
 char *intr_msg[IDT_COUNT];
 void *intr_func_table[IDT_COUNT];
-
+extern uint32_t syscall_handler(void);
 extern void *intr_entry_table[IDT_COUNT];       //中断描述符表
 static void general_intr_handler(uint8_t name)
 {
@@ -100,6 +100,8 @@ static void idt_desc_init()
     {
         make_idt(&idt[i], IDT_DESCRIPTOR_ATTRITUBE_DPL0, intr_entry_table[i]);
     }
+    //系统调用特权级为3
+    make_idt(&idt[IDT_COUNT-1], IDT_DESCRIPTOR_ATTRITUBE_DPL3, syscall_handler);
     Puts("idt descriptor init done!\n");
 }
 

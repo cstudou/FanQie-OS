@@ -8,6 +8,7 @@
 #include "../device/console.h"
 #include "../device/keyboard.h"
 #include "tss.h"
+#include "syscall.h"
 void init_all();
 
 #endif

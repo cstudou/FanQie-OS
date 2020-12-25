@@ -7,6 +7,7 @@
 static struct Tss tss;
 void update_tss_esp(struct TaskStruct *task)
 {
+    //调进程时会保存0级栈，中断来的时候栈就是pcb顶部
     tss.esp0 = (uint32_t *)((uint32_t)task + 4096);
 }
 
@@ -42,6 +43,7 @@ void tss_init()
     // 重新加载gdt
     // |32位基址|16位界限|
     // 一共7个描述符
+    //先强转！！！精度丢失
     uint64_t new_gdt = (uint64_t)(((uint64_t)0xc0000500 << 16) + (uint16_t)(7 * 8 - 1));
 
     asm volatile("lgdt %0" ::"m"(new_gdt));

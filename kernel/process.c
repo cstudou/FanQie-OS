@@ -26,6 +26,7 @@ void start_process(void *filename)
     task->self_stack += sizeof(struct ThreadStack);     //初始化完成后，指针预留了中断上下文与线程上下文
     struct InterruptStack *intr_stack = (struct InterruptStack *)task->self_stack;
     //8个通用寄存器
+    
     intr_stack->edi = intr_stack->esi = intr_stack->ebp = intr_stack->esp_copy = 0;
     intr_stack->ebx = intr_stack->edx = intr_stack->ecx = intr_stack->eax = 0;
     //用户进程不能访问显存
@@ -33,13 +34,16 @@ void start_process(void *filename)
 
     intr_stack->ds = intr_stack->es = intr_stack->fs = SELECT_U_DATA;
     intr_stack->eip = func;
+    //intr_stack->eip();
     intr_stack->cs = SELECT_U_CODE;
     intr_stack->eflags = (EFLAGS_IOPL_0 | EFLAGS_MBS | EFLAGS_IF_1);    //开中断，特权级是0
     //(0xc0000000-1)是用户空间的最高地址，0xc0000000~0xffffffff 是内核空间
-    //分配一页，0x1000为4kb
+    //分配一页，0x1000为4kb，当栈
     intr_stack->esp = (void *)((uint32_t)get_page(USERPOOL, (0xc0000000 - 0x1000)) + 4096);
     intr_stack->ss = SELECT_U_DATA;
+    //CPuts("mamsdauhfkasnfkads\n");
     asm volatile("movl %0, %%esp; jmp intr_exit"::"g"(intr_stack):"memory");
+    //CPuts("mamsdauhfkasnfkads\n");
 }
 
 
