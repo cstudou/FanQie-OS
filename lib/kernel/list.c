@@ -34,11 +34,7 @@ void list_push_front(struct List *li, struct ListPtr *elem)
 void list_remove(struct ListPtr *elem)
 {
     enum InterruptStatus status = Off_interrupt();
-    if(elem->prev == (void *)0)
-    {
-        elem->prev->next = elem->next->prev = (void *)0;
-    }
-    else
+ 
     {
         elem->prev->next = elem->next;
         elem->next->prev = elem->prev;

@@ -24,7 +24,7 @@ void sem_wait(struct Semaphore *sem)
         //锁被持有
         struct TaskStruct *task = running_thread();
         //加入阻塞队列
-        //if(!list_find(&sem->semaphore_list, &task->thread_tag))
+        if(!list_find(&sem->semaphore_list, &task->thread_tag))
         {
             list_push_back(&sem->semaphore_list, &task->thread_tag);
             thread_block(BLOCKED);      //锁住线程

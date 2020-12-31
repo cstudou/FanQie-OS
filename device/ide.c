@@ -126,17 +126,13 @@ void read_disk(struct Disk *disk, uint32_t lba, void *buf, uint32_t size)
         select_sector(disk, lba+sec_done, sec_do);         //写入待读入的扇区数和起始扇区号
         
         cmd_out(disk->channel, CMD_READ_SECTOR);    //准备读数据
-        Puts("----**--\n");
+        lock_acquire(&disk->channel->lock);
         sem_wait(&disk->channel->disk_done);        //阻塞
-        Puts("\n--*---\n");
-        // if(!busy_wait(disk))                        //失败
-        // {
-        //     Puts(disk->name);
-        //     Puts(" read sector ");
-        //     Putint(lba);
-        //     Puts(" failed\n");
-        //     return ;
-        // }
+        lock_release(&disk->channel->lock);
+         if(!busy_wait(disk))                        //失败
+         {
+            return ;
+         }
         read_sector(disk, (void *)((uint32_t)buf+sec_done*512), sec_do);
         sec_done += sec_do;
 
@@ -163,10 +159,6 @@ void write_disk(struct Disk *disk, uint32_t lba, void *buf, uint32_t size)
         
         if(!busy_wait(disk))                        //失败
         {
-            Puts(disk->name);
-            Puts(" read sector ");
-            Putint(lba);
-            Puts(" failed\n");
             return ;
         }
         write_sector(disk, (void *)((uint32_t)buf+sec_done*512), sec_do);
@@ -181,7 +173,7 @@ void intr_disk_handler(uint8_t intr_no)
 {
     uint8_t no = intr_no - 0x2e;
     struct Channel *channel = &channels[no];
-   // if(channel->in_intr)
+    if(channel->in_intr)
     {
         channel->in_intr = 0;
         sem_post(&channel->disk_done);       //解开阻塞，硬盘完成操作后会发中断信号
@@ -210,8 +202,10 @@ void identify_disk(struct Disk *disk)
     char buf[512];              //发送 identify 命令后返回的硬盘参数
     select_disk(disk);
     cmd_out(disk->channel, CMD_IDENTIFY);
-    sem_wait(&disk->channel->disk_done);
+    
+    lock_release(&disk->channel->lock);
     read_sector(disk, buf, 1);
+    
     char temp[64];
     uint8_t sn_start = 10 * 2, sn_len = 20, md_start = 27 * 2, md_len = 40; 
     swap_bytes(&buf[sn_start], temp, sn_len);
@@ -340,7 +334,7 @@ void ide_init()
         index++;
     }
     printk("\n   all partition info\n");
-   /* 打印所有分区信息 */
-   list_traversal(&partition_list, info, (int)((void *)0));
-   printk("ide_init done\n");
+    /* 打印所有分区信息 */
+    list_traversal(&partition_list, info, (int)((void *)0));
+    printk("ide_init done\n");
 }
