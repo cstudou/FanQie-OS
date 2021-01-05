@@ -71,7 +71,6 @@ void thread_create(struct TaskStruct *pthread, void (*function)(void *), void *a
 void init_thread(struct TaskStruct* pthread, char *name, int priority)
 {
     memset(pthread, 0, sizeof(struct TaskStruct));
-    //标准输入、输出、错误
     pthread->fd_table[0] = 0;
     pthread->fd_table[1] = 1;
     pthread->fd_table[2] = 2;

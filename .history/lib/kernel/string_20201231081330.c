@@ -73,25 +73,13 @@ uint32_t strlen(const char *begin)
 int8_t strcmp(const char *a, const char *b)
 {
     ASSERT((a != NULL) && (b != NULL));
-    uint32_t lena = strlen(a), lenb=strlen(b);
-    int index = 0;
-    for(; index<lena && index<lenb; index++)
+    uint32_t len = strlen(a);
+    while(len && *a == *b)
     {
-        if(a[index] == b[index])
-        {
-            continue;
-        }
-        else
-        {
-            return a[index] < b[index] ? 1 : -1;
-        }
+        a++;
+        b++;
     }
-    if(lena != lenb)
-    {
-        return lena > lenb ? 1 : -1;
-    }
-    return 0;
-    //return *a < *b ? 1 : *a > *b;   // *a == *b返回0
+    return *a < *b ? 1 : *a > *b;   // *a == *b返回0
 }
 
 //查找str中首次出现ch的地址,从左到右

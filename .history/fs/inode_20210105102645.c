@@ -71,7 +71,7 @@ struct Inode* inode_open(struct Partition *part, uint32_t no)
         }
         li = li->next;
     }
-    //找不到就去磁盘读
+    //找不到
     struct InodePos pos;
     inode_locate(part, no, &pos);
     struct TaskStruct *task = running_thread();
@@ -112,18 +112,4 @@ void close_inode(struct Inode *inode)
         task->page_addr = pgdir;
     }
     set_InterruptStatus(status);
-}
-
-void inode_init(uint32_t no, struct Inode* inode)
-{
-    inode->inode_num = no;
-    inode->inode_size = 0;          //文件大小
-    inode->inode_open_num = 0;
-    inode->write_flag = false;
-    uint8_t index = 0;
-    for(; index<13; ++index)
-    {
-        inode->inode_sector[index] = 0; //文件块地址为空
-    }
-
 }

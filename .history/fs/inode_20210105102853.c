@@ -71,7 +71,7 @@ struct Inode* inode_open(struct Partition *part, uint32_t no)
         }
         li = li->next;
     }
-    //找不到就去磁盘读
+    //找不到
     struct InodePos pos;
     inode_locate(part, no, &pos);
     struct TaskStruct *task = running_thread();

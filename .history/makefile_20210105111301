@@ -97,9 +97,9 @@ $(BUILD_DIR)/superblock.o: fs/superblock.c fs/superblock.h lib/kernel/stdint.h
 	$(CC) $(CFLAGS) $< -o $@
 $(BUILD_DIR)/filesystem.o: fs/filesystem.c fs/filesystem.h fs/inode.h device/ide.h fs/dir.h fs/superblock.h
 	$(CC) $(CFLAGS) $< -o $@
-$(BUILD_DIR)/file.o: fs/file.c fs/file.h fs/inode.h lib/kernel/stdint.h
+$(BUILD_DIR)/file.o: fs/file.c fs/file.h device/inode.h lib/kernel/stdint.h
 	$(CC) $(CFLAGS) $< -o $@
-
+	
 $(BUILD_DIR)/kernel.o: kernel/kernel.S
 	$(AS) $(ASFLAGS) $< -o $@
 $(BUILD_DIR)/print.o: lib/kernel/print.S lib/include/head.inc

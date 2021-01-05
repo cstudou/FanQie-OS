@@ -1,17 +1,12 @@
 #include "filesystem.h"
 #include "dir.h"
 struct Partition *partition;
-
-/*
-操作系统引导块--超级块--空闲块位图--inode位图--inode数组--根目录--空闲块区域
-*/
-
 void partition_format(struct Disk *disk, struct Partition *part)
 {
-    uint32_t boot_sector_sectors = 1;           //引导块（未使用）
+    uint32_t boot_sector_sectors = 1;
     uint32_t super_block_sectors = 1;
     uint32_t inode_bitmap_sectors = 1;
-    //最多4096个inode，inode数组所占扇区数
+    //最多4096个inode
     uint32_t inode_table_sectors = (sizeof(struct Inode) * 4096 + 511) / 512;
     uint32_t used_sectors = boot_sector_sectors + super_block_sectors + inode_bitmap_sectors + \
                         inode_table_sectors;
@@ -91,6 +86,10 @@ void partition_format(struct Disk *disk, struct Partition *part)
     write_disk(hd, sb.data_start_addr, buf, 1);
     sys_free(buf);
 
+
+
+
+
 printk(" magic:0x%x\n part_lba_base:0x%x\n all_sectors:0x%x\n inode_cnt:0x%x\nblock_bitmap_lba:0x%x\n block_bitmap_sectors:0x%x\n inode_bitmap_lba:0x%x\n \
         inode_bitmap_sectors:0x%x\ninode_table_lba:0x%x\n  \
         inode_table_sectors:0x%x\ndata_start_lba:0x%x\n", sb.magic, sb.lba_start, sb.sector_num, sb.inode_num, \
@@ -99,46 +98,6 @@ printk(" magic:0x%x\n part_lba_base:0x%x\n all_sectors:0x%x\n inode_cnt:0x%x\nbl
 
 
 }
-
-bool mount(struct ListPtr *list, int arg)
-{
-    char *name = (char *)arg;
-    
-    struct Partition temp;
-
-    uint32_t len = (uint32_t)&temp.part_tag - (uint32_t)&temp;
-    struct Partition *part = (struct Partition *)((uint32_t)list - len);
-    if(!strcmp(part->name, name))
-    {
-        
-        //找到
-        partition = part;
-        struct Disk *disk = part->disk;
-        //超级块
-        struct SuperBlock *sb = (struct SuperBlock *)sys_malloc(512);
-        memset(sb, 0, 512);
-        partition->sb = (struct SuperBlock *)sys_malloc(sizeof(struct SuperBlock));
-        //读入超级块
-        read_disk(disk, partition->start_lba+1, sb, 1);
-        //复制到分区超级块
-        memcpy(partition->sb, sb, sizeof(struct SuperBlock));
-        //读位图
-        partition->block_bitmap.bits = (uint8_t *)sys_malloc(sb->block_bitmap_size * 512);
-        partition->block_bitmap.bitmap_len = sb->block_bitmap_size * 512;
-        read_disk(disk, sb->block_bitmap_addr, partition->block_bitmap.bits, sb->block_bitmap_size);
-    
-        //读inode
-        partition->inode_bitmap.bits = (uint8_t*)sys_malloc(sb->inode_bitmap_size * 512);
-        partition->inode_bitmap.bitmap_len = sb->inode_bitmap_size * 512;
-        read_disk(disk, sb->inode_bitmap_addr, partition->inode_bitmap.bits, sb->inode_bitmap_size);
-    
-        list_init(&partition->open_inodes);
-        printk("mount %s done\n", partition->name);
-        return true;
-    }
-    return false;
-}
-
 
 void filesystem_init()
 {
@@ -192,7 +151,33 @@ void filesystem_init()
         channel_no++;
     }
     sys_free(sb);
-    char temp[5] = "sdb1";
-    
-    list_traversal(&partition_list, mount, (int)temp);
+}
+
+bool mount(struct List *list, void* arg)
+{
+    char *name = (char *)arg;
+    struct Partition temp;
+
+    uint32_t len = (uint32_t)&temp.part_tag - (uint32_t)&temp;
+    struct Partition *part = (struct Partition *)((uint32_t)list - len);
+    if(!strcmp(part->name, name))
+    {
+        //找到
+        partition = part;
+        struct Disk *disk = part->disk;
+        //超级块
+        struct SuperBlock *sb = (struct SuperBlock *)sys_malloc(512);
+        memset(sb, 0, 512);
+        part->sb = (struct SuperBlock *)sys_malloc(sizeof(struct SuperBlock));
+        //读入超级块
+        read_disk(disk, part->start_lba+1, sb, 1);
+        //复制到分区超级块
+        memcpy(partition->sb, sb, sizeof(struct SuperBlock));
+        //读位图
+        part->block_bitmap.bits = (uint8_t *)sys_malloc(sb->block_bitmap_size * 512);
+        part->block_bitmap.bitmap_len = sb->block_bitmap_size * 512;
+        read_disk(disk, sb->block_bitmap_addr, partition->block_bitmap.bits, sb->block_bitmap_size);
+    }
+
+
 }

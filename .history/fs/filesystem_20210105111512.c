@@ -103,14 +103,13 @@ printk(" magic:0x%x\n part_lba_base:0x%x\n all_sectors:0x%x\n inode_cnt:0x%x\nbl
 bool mount(struct ListPtr *list, int arg)
 {
     char *name = (char *)arg;
-    
+    printk("%s\n", name);
     struct Partition temp;
 
     uint32_t len = (uint32_t)&temp.part_tag - (uint32_t)&temp;
     struct Partition *part = (struct Partition *)((uint32_t)list - len);
     if(!strcmp(part->name, name))
     {
-        
         //找到
         partition = part;
         struct Disk *disk = part->disk;

@@ -77,7 +77,7 @@ struct TaskStruct
     struct MemoryDesc   user_memory_desc[7];
     uint32_t            stack_margin;          //栈的边界标记，用于检测栈的溢出
 
-    int32_t             fd_table[8];           //文件描述符，每个进程可打开的文件
+    uint32_t fd_table[8];                      //文件描述符
 };
 
 

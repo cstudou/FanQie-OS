@@ -90,7 +90,6 @@ int8_t strcmp(const char *a, const char *b)
     {
         return lena > lenb ? 1 : -1;
     }
-    return 0;
     //return *a < *b ? 1 : *a > *b;   // *a == *b返回0
 }
 

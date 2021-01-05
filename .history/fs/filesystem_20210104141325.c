@@ -1,17 +1,16 @@
 #include "filesystem.h"
 #include "dir.h"
 struct Partition *partition;
-
 /*
 操作系统引导块--超级块--空闲块位图--inode位图--inode数组--根目录--空闲块区域
 */
 
 void partition_format(struct Disk *disk, struct Partition *part)
 {
-    uint32_t boot_sector_sectors = 1;           //引导块（未使用）
+    uint32_t boot_sector_sectors = 1;
     uint32_t super_block_sectors = 1;
     uint32_t inode_bitmap_sectors = 1;
-    //最多4096个inode，inode数组所占扇区数
+    //最多4096个inode
     uint32_t inode_table_sectors = (sizeof(struct Inode) * 4096 + 511) / 512;
     uint32_t used_sectors = boot_sector_sectors + super_block_sectors + inode_bitmap_sectors + \
                         inode_table_sectors;
@@ -103,14 +102,12 @@ printk(" magic:0x%x\n part_lba_base:0x%x\n all_sectors:0x%x\n inode_cnt:0x%x\nbl
 bool mount(struct ListPtr *list, int arg)
 {
     char *name = (char *)arg;
-    
     struct Partition temp;
 
     uint32_t len = (uint32_t)&temp.part_tag - (uint32_t)&temp;
     struct Partition *part = (struct Partition *)((uint32_t)list - len);
     if(!strcmp(part->name, name))
     {
-        
         //找到
         partition = part;
         struct Disk *disk = part->disk;
@@ -193,6 +190,5 @@ void filesystem_init()
     }
     sys_free(sb);
     char temp[5] = "sdb1";
-    
     list_traversal(&partition_list, mount, (int)temp);
 }

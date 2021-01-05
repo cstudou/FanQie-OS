@@ -83,14 +83,13 @@ int8_t strcmp(const char *a, const char *b)
         }
         else
         {
-            return a[index] < b[index] ? 1 : -1;
+            return *a < *b ? 1 : -1;
         }
     }
     if(lena != lenb)
     {
         return lena > lenb ? 1 : -1;
     }
-    return 0;
     //return *a < *b ? 1 : *a > *b;   // *a == *b返回0
 }
 

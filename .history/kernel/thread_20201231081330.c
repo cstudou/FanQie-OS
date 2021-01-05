@@ -71,15 +71,6 @@ void thread_create(struct TaskStruct *pthread, void (*function)(void *), void *a
 void init_thread(struct TaskStruct* pthread, char *name, int priority)
 {
     memset(pthread, 0, sizeof(struct TaskStruct));
-    //标准输入、输出、错误
-    pthread->fd_table[0] = 0;
-    pthread->fd_table[1] = 1;
-    pthread->fd_table[2] = 2;
-    uint8_t index = 3;
-    for(; index < 8; ++index)
-    {
-        pthread->fd_table[index] = -1;
-    }
     pthread->pid = allocate_pid();          //分配pid
     pthread->priority = priority;
     strcpy(pthread->name, name);

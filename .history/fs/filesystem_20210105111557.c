@@ -108,9 +108,9 @@ bool mount(struct ListPtr *list, int arg)
 
     uint32_t len = (uint32_t)&temp.part_tag - (uint32_t)&temp;
     struct Partition *part = (struct Partition *)((uint32_t)list - len);
+    printk("%s\n", part->name);
     if(!strcmp(part->name, name))
     {
-        
         //找到
         partition = part;
         struct Disk *disk = part->disk;

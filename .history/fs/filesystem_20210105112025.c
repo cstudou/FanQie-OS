@@ -108,6 +108,8 @@ bool mount(struct ListPtr *list, int arg)
 
     uint32_t len = (uint32_t)&temp.part_tag - (uint32_t)&temp;
     struct Partition *part = (struct Partition *)((uint32_t)list - len);
+    printk("%d\n", (int)strcmp("sdb1",part->name));
+    printk(part->name);
     if(!strcmp(part->name, name))
     {
         

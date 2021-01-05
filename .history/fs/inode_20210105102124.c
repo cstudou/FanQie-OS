@@ -71,7 +71,7 @@ struct Inode* inode_open(struct Partition *part, uint32_t no)
         }
         li = li->next;
     }
-    //找不到就去磁盘读
+    //找不到
     struct InodePos pos;
     inode_locate(part, no, &pos);
     struct TaskStruct *task = running_thread();
@@ -80,50 +80,4 @@ struct Inode* inode_open(struct Partition *part, uint32_t no)
 
     inode = (struct Inode*)sys_malloc(sizeof(struct Inode));
     task->page_addr = pgdir;
-    char *buf;
-    if(pos.two_sec)
-    {
-        buf = (char *)sys_malloc(1024);
-        read_disk(part->disk, pos.sector_lba, buf, 2);
-    }
-    else
-    {
-        buf = (char *)sys_malloc(512);
-        read_disk(part->disk, pos.sector_lba, buf, 1);
-    }
-    memcpy(inode, buf+pos.offset, sizeof(struct Inode));
-    list_push_back(&part->open_inodes, &inode->inode_tag);
-    inode->inode_open_num = 1;
-    sys_free(buf);
-    return inode;
-}
-
-void close_inode(struct Inode *inode)
-{
-    enum InterruptStatus status = Off_interrupt();
-    inode->inode_open_num -= 1;
-    if(!inode->inode_open_num)
-    {
-        list_remove(&inode->inode_tag);
-        struct TaskStruct *task = running_thread();
-        uint32_t *pgdir = task->page_addr;
-        task->page_addr = NULL;             //不置位null会在用户空间释放
-        sys_free(inode);
-        task->page_addr = pgdir;
-    }
-    set_InterruptStatus(status);
-}
-
-void inode_init(uint32_t no, struct Inode* inode)
-{
-    inode->inode_num = no;
-    inode->inode_size = 0;          //文件大小
-    inode->inode_open_num = 0;
-    inode->write_flag = false;
-    uint8_t index = 0;
-    for(; index<13; ++index)
-    {
-        inode->inode_sector[index] = 0; //文件块地址为空
-    }
-
 }
