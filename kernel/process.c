@@ -17,6 +17,27 @@ extern void intr_exit(void);
 
 
 */
+/*
+    ss
+    esp
+    eflags
+    cs
+    eip
+    error_code    --------处理器自动压入
+    ds
+    es
+    fs
+    gs
+    eax           ---------popad
+    ecx
+    edx
+    ebx
+    esp
+    ebp
+    esi
+    edi          -----------popad
+
+*/
 
 //构建用户进程初始信息上下文
 void start_process(void *filename)
@@ -34,16 +55,22 @@ void start_process(void *filename)
 
     intr_stack->ds = intr_stack->es = intr_stack->fs = SELECT_U_DATA;
     intr_stack->eip = func;
-    //intr_stack->eip();
+
     intr_stack->cs = SELECT_U_CODE;
     intr_stack->eflags = (EFLAGS_IOPL_0 | EFLAGS_MBS | EFLAGS_IF_1);    //开中断，特权级是0
     //(0xc0000000-1)是用户空间的最高地址，0xc0000000~0xffffffff 是内核空间
     //分配一页，0x1000为4kb，当栈
     intr_stack->esp = (void *)((uint32_t)get_page(USERPOOL, (0xc0000000 - 0x1000)) + 4096);
     intr_stack->ss = SELECT_U_DATA;
-    //CPuts("mamsdauhfkasnfkads\n");
+    /*
+        将esp转到中断栈
+        在intr_exit中先pop中断号再popad
+        再pop gs。。。等
+        再add esp，4跳过errorcode
+        ret后就是栈中的eip了
+        特权级变化时会弹出esp和ss
+    */
     asm volatile("movl %0, %%esp; jmp intr_exit"::"g"(intr_stack):"memory");
-    //CPuts("mamsdauhfkasnfkads\n");
 }
 
 
